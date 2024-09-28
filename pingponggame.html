@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ping Pong Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #34495e;
+            font-family: 'Arial', sans-serif;
+        }
+
+        canvas {
+            background-color: #2c3e50;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+        }
+
+        #scoreBoard {
+            position: absolute;
+            top: 10px;
+            font-size: 24px;
+            color: #ecf0f1;
+            z-index: 1;
+        }
+
+        #gameOver {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: rgba(52, 73, 94, 0.9);
+            color: #ecf0f1;
+            font-size: 48px;
+            text-align: center;
+            border-radius: 10px;
+            z-index: 2;
+        }
+    </style>
+</head>
+<body>
+    <div id="scoreBoard">
+        Player Score: <span id="playerScore">0</span>
+    </div>
+    <div id="gameOver">Game Over<br>Final Score: <span id="finalScore"></span></div>
+    <canvas id="gameCanvas" width="700" height="500"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const paddleWidth = 10;
+        const playerPaddleHeight = 150;
+        const computerPaddleHeight = 100;
+        const ballSize = 10;
+
+        let leftPaddleY = canvas.height / 2 - playerPaddleHeight / 2;
+        let rightPaddleY = canvas.height / 2 - computerPaddleHeight / 2;
+        let ballX = canvas.width / 2, ballY = canvas.height / 2;
+        
+        let ballSpeedX = 4, ballSpeedY = 4; // Increased speed
+        const paddleSpeed = 8;
+        let upKeyPressed = false, downKeyPressed = false;
+        let playerScore = 0;
+        let gameActive = true;
+
+        const playerScoreDisplay = document.getElementById("playerScore");
+        const gameOverDisplay = document.getElementById("gameOver");
+        const finalScoreDisplay = document.getElementById("finalScore");
+
+        // Draw paddles and ball
+        function drawPaddle(x, y, height) {
+            ctx.fillStyle = "#ecf0f1";
+            ctx.fillRect(x, y, paddleWidth, height);
+        }
+
+        function drawBall(x, y) {
+            ctx.beginPath();
+            ctx.arc(x, y, ballSize, 0, Math.PI * 2);
+            ctx.fillStyle = "#e74c3c";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function movePaddles() {
+            // Player movement (left paddle)
+            if (upKeyPressed && leftPaddleY > 0) {
+                leftPaddleY -= paddleSpeed;
+            }
+            if (downKeyPressed && leftPaddleY < canvas.height - playerPaddleHeight) {
+                leftPaddleY += paddleSpeed;
+            }
+        }
+
+        function moveComputerPaddle() {
+            if (ballY < rightPaddleY + computerPaddleHeight / 2) {
+                rightPaddleY -= paddleSpeed * 0.5; // Slow down computer paddle
+            } else {
+                rightPaddleY += paddleSpeed * 0.5;
+            }
+
+            // Keep the computer paddle within the canvas
+            if (rightPaddleY < 0) rightPaddleY = 0;
+            if (rightPaddleY > canvas.height - computerPaddleHeight) rightPaddleY = canvas.height - computerPaddleHeight;
+        }
+
+        function moveBall() {
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+
+            // Bounce off top and bottom walls
+            if (ballY - ballSize < 0 || ballY + ballSize > canvas.height) {
+                ballSpeedY = -ballSpeedY;
+            }
+
+            // Bounce off paddles
+            if (ballX - ballSize < paddleWidth && ballY > leftPaddleY && ballY < leftPaddleY + playerPaddleHeight) {
+                ballSpeedX = -ballSpeedX;
+                playerScore++; // Increment score
+                playerScoreDisplay.textContent = playerScore; // Update displayed score
+            }
+
+            if (ballX + ballSize > canvas.width - paddleWidth && ballY > rightPaddleY && ballY < rightPaddleY + computerPaddleHeight) {
+                ballSpeedX = -ballSpeedX;
+            }
+
+            // Check if player scored
+            if (ballX - ballSize < 0) {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            gameActive = false;
+            finalScoreDisplay.textContent = playerScore;
+            gameOverDisplay.style.display = "block";
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPaddle(0, leftPaddleY, playerPaddleHeight); // Left paddle (Player)
+            drawPaddle(canvas.width - paddleWidth, rightPaddleY, computerPaddleHeight); // Right paddle (Computer)
+            drawBall(ballX, ballY);
+            movePaddles();
+            moveComputerPaddle();
+            moveBall();
+            
+            if (gameActive) {
+                requestAnimationFrame(draw);
+            }
+        }
+
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "ArrowUp") {
+                upKeyPressed = true;
+            } else if (e.key === "ArrowDown") {
+                downKeyPressed = true;
+            }
+        });
+
+        document.addEventListener("keyup", function (e) {
+            if (e.key === "ArrowUp") {
+                upKeyPressed = false;
+            } else if (e.key === "ArrowDown") {
+                downKeyPressed = false;
+            }
+        });
+
+        draw();
+    </script>
+</body>
+</html>
